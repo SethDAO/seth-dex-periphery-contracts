@@ -1,22 +1,23 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity =0.6.6;
 
-import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
-import '@uniswap/lib/contracts/libraries/Babylonian.sol';
-import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
+import "@sethdao/dex-core-contracts/contracts/interfaces/ISethPair.sol";
+import "@uniswap/lib/contracts/libraries/Babylonian.sol";
+import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
-import '../libraries/UniswapV2LiquidityMathLibrary.sol';
-import '../interfaces/IERC20.sol';
-import '../interfaces/IUniswapV2Router01.sol';
-import '../libraries/SafeMath.sol';
-import '../libraries/UniswapV2Library.sol';
+import "../libraries/SethLiquidityMathLibrary.sol";
+import "../interfaces/IERC20.sol";
+import "../interfaces/ISethRouter01.sol";
+import "../libraries/SafeMath.sol";
+import "../libraries/SethLibrary.sol";
 
 contract ExampleSwapToPrice {
     using SafeMath for uint256;
 
-    IUniswapV2Router01 public immutable router;
+    ISethRouter01 public immutable router;
     address public immutable factory;
 
-    constructor(address factory_, IUniswapV2Router01 router_) public {
+    constructor(address factory_, ISethRouter01 router_) public {
         factory = factory_;
         router = router_;
     }
@@ -42,14 +43,16 @@ contract ExampleSwapToPrice {
         bool aToB;
         uint256 amountIn;
         {
-            (uint256 reserveA, uint256 reserveB) = UniswapV2Library.getReserves(factory, tokenA, tokenB);
-            (aToB, amountIn) = UniswapV2LiquidityMathLibrary.computeProfitMaximizingTrade(
-                truePriceTokenA, truePriceTokenB,
-                reserveA, reserveB
+            (uint256 reserveA, uint256 reserveB) = SethLibrary.getReserves(factory, tokenA, tokenB);
+            (aToB, amountIn) = SethLiquidityMathLibrary.computeProfitMaximizingTrade(
+                truePriceTokenA,
+                truePriceTokenB,
+                reserveA,
+                reserveB
             );
         }
 
-        require(amountIn > 0, 'ExampleSwapToPrice: ZERO_AMOUNT_IN');
+        require(amountIn > 0, "ExampleSwapToPrice: ZERO_AMOUNT_IN");
 
         // spend up to the allowance of the token in
         uint256 maxSpend = aToB ? maxSpendTokenA : maxSpendTokenB;

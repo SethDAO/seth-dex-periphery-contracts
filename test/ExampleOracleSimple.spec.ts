@@ -1,70 +1,75 @@
-import chai, { expect } from 'chai'
-import { Contract } from 'ethers'
-import { BigNumber } from 'ethers/utils'
-import { solidity, MockProvider, createFixtureLoader, deployContract } from 'ethereum-waffle'
+import chai, { expect } from "chai";
+import { Wallet } from "ethers";
+import { smock } from "@defi-wonderland/smock";
+import { MockProvider } from "ethereum-waffle";
 
-import { expandTo18Decimals, mineBlock, encodePrice } from './shared/utilities'
-import { v2Fixture } from './shared/fixtures'
+import { SethPair } from "@sethdao/dex-core-contracts";
 
-import ExampleOracleSimple from '../build/ExampleOracleSimple.json'
+import { expandTo18Decimals, mineBlock, encodePrice } from "./shared/utilities";
 
-chai.use(solidity)
+import { v2Fixture } from "./shared/fixtures";
+import { ExampleOracleSimple, ExampleOracleSimple__factory, IERC20 } from "../types";
+
+chai.use(smock.matchers);
 
 const overrides = {
-  gasLimit: 9999999
-}
+    gasLimit: 9999999,
+};
 
-const token0Amount = expandTo18Decimals(5)
-const token1Amount = expandTo18Decimals(10)
+const token0Amount = expandTo18Decimals(5);
+const token1Amount = expandTo18Decimals(10);
 
-describe('ExampleOracleSimple', () => {
-  const provider = new MockProvider({
-    hardfork: 'istanbul',
-    mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
-    gasLimit: 9999999
-  })
-  const [wallet] = provider.getWallets()
-  const loadFixture = createFixtureLoader(provider, [wallet])
+describe("ExampleOracleSimple", () => {
+    let wallet: Wallet;
 
-  let token0: Contract
-  let token1: Contract
-  let pair: Contract
-  let exampleOracleSimple: Contract
+    let token0: IERC20;
+    let token1: IERC20;
+    let pair: SethPair;
+    let exampleOracleSimple: ExampleOracleSimple;
 
-  async function addLiquidity() {
-    await token0.transfer(pair.address, token0Amount)
-    await token1.transfer(pair.address, token1Amount)
-    await pair.mint(wallet.address, overrides)
-  }
+    const provider = new MockProvider({
+        ganacheOptions: {
+            hardfork: "istanbul",
+            mnemonic: "horn horn horn horn horn horn horn horn horn horn horn horn",
+            ...overrides,
+        },
+    });
 
-  beforeEach(async function() {
-    const fixture = await loadFixture(v2Fixture)
+    async function addLiquidity() {
+        await token0.transfer(pair.address, token0Amount);
+        await token1.transfer(pair.address, token1Amount);
+        await pair.mint(wallet.address, overrides);
+    }
 
-    token0 = fixture.token0
-    token1 = fixture.token1
-    pair = fixture.pair
-    await addLiquidity()
-    exampleOracleSimple = await deployContract(
-      wallet,
-      ExampleOracleSimple,
-      [fixture.factoryV2.address, token0.address, token1.address],
-      overrides
-    )
-  })
+    beforeEach(async function () {
+        [wallet] = provider.getWallets();
+        const fixture = await v2Fixture(wallet);
 
-  it('update', async () => {
-    const blockTimestamp = (await pair.getReserves())[2]
-    await mineBlock(provider, blockTimestamp + 60 * 60 * 23)
-    await expect(exampleOracleSimple.update(overrides)).to.be.reverted
-    await mineBlock(provider, blockTimestamp + 60 * 60 * 24)
-    await exampleOracleSimple.update(overrides)
+        token0 = fixture.token0;
+        token1 = fixture.token1;
+        pair = fixture.pair;
+        await addLiquidity();
+        exampleOracleSimple = await new ExampleOracleSimple__factory(wallet).deploy(
+            fixture.factoryV2.address,
+            token0.address,
+            token1.address,
+            overrides
+        );
+    });
 
-    const expectedPrice = encodePrice(token0Amount, token1Amount)
+    it("update", async () => {
+        const blockTimestamp = (await pair.getReserves())[2];
+        await mineBlock(provider, blockTimestamp + 60 * 60 * 23);
+        await expect(exampleOracleSimple.update(overrides)).to.be.reverted;
+        await mineBlock(provider, blockTimestamp + 60 * 60 * 24);
+        await exampleOracleSimple.update(overrides);
 
-    expect(await exampleOracleSimple.price0Average()).to.eq(expectedPrice[0])
-    expect(await exampleOracleSimple.price1Average()).to.eq(expectedPrice[1])
+        const expectedPrice = encodePrice(token0Amount, token1Amount);
 
-    expect(await exampleOracleSimple.consult(token0.address, token0Amount)).to.eq(token1Amount)
-    expect(await exampleOracleSimple.consult(token1.address, token1Amount)).to.eq(token0Amount)
-  })
-})
+        expect(await exampleOracleSimple.price0Average()).to.eq(expectedPrice[0]);
+        expect(await exampleOracleSimple.price1Average()).to.eq(expectedPrice[1]);
+
+        expect(await exampleOracleSimple.consult(token0.address, token0Amount)).to.eq(token1Amount);
+        expect(await exampleOracleSimple.consult(token1.address, token1Amount)).to.eq(token0Amount);
+    });
+});

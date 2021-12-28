@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity =0.6.6;
 
-import '../libraries/UniswapV2LiquidityMathLibrary.sol';
+import "../libraries/SethLiquidityMathLibrary.sol";
 
 contract ExampleComputeLiquidityValue {
     using SafeMath for uint256;
@@ -11,58 +12,49 @@ contract ExampleComputeLiquidityValue {
         factory = factory_;
     }
 
-    // see UniswapV2LiquidityMathLibrary#getReservesAfterArbitrage
+    // see SethLiquidityMathLibrary#getReservesAfterArbitrage
     function getReservesAfterArbitrage(
         address tokenA,
         address tokenB,
         uint256 truePriceTokenA,
         uint256 truePriceTokenB
     ) external view returns (uint256 reserveA, uint256 reserveB) {
-        return UniswapV2LiquidityMathLibrary.getReservesAfterArbitrage(
-            factory,
-            tokenA,
-            tokenB,
-            truePriceTokenA,
-            truePriceTokenB
-        );
+        return
+            SethLiquidityMathLibrary.getReservesAfterArbitrage(
+                factory,
+                tokenA,
+                tokenB,
+                truePriceTokenA,
+                truePriceTokenB
+            );
     }
 
-    // see UniswapV2LiquidityMathLibrary#getLiquidityValue
+    // see SethLiquidityMathLibrary#getLiquidityValue
     function getLiquidityValue(
         address tokenA,
         address tokenB,
         uint256 liquidityAmount
-    ) external view returns (
-        uint256 tokenAAmount,
-        uint256 tokenBAmount
-    ) {
-        return UniswapV2LiquidityMathLibrary.getLiquidityValue(
-            factory,
-            tokenA,
-            tokenB,
-            liquidityAmount
-        );
+    ) external view returns (uint256 tokenAAmount, uint256 tokenBAmount) {
+        return SethLiquidityMathLibrary.getLiquidityValue(factory, tokenA, tokenB, liquidityAmount);
     }
 
-    // see UniswapV2LiquidityMathLibrary#getLiquidityValueAfterArbitrageToPrice
+    // see SethLiquidityMathLibrary#getLiquidityValueAfterArbitrageToPrice
     function getLiquidityValueAfterArbitrageToPrice(
         address tokenA,
         address tokenB,
         uint256 truePriceTokenA,
         uint256 truePriceTokenB,
         uint256 liquidityAmount
-    ) external view returns (
-        uint256 tokenAAmount,
-        uint256 tokenBAmount
-    ) {
-        return UniswapV2LiquidityMathLibrary.getLiquidityValueAfterArbitrageToPrice(
-            factory,
-            tokenA,
-            tokenB,
-            truePriceTokenA,
-            truePriceTokenB,
-            liquidityAmount
-        );
+    ) external view returns (uint256 tokenAAmount, uint256 tokenBAmount) {
+        return
+            SethLiquidityMathLibrary.getLiquidityValueAfterArbitrageToPrice(
+                factory,
+                tokenA,
+                tokenB,
+                truePriceTokenA,
+                truePriceTokenB,
+                liquidityAmount
+            );
     }
 
     // test function to measure the gas cost of the above function
@@ -72,11 +64,9 @@ contract ExampleComputeLiquidityValue {
         uint256 truePriceTokenA,
         uint256 truePriceTokenB,
         uint256 liquidityAmount
-    ) external view returns (
-        uint256
-    ) {
-        uint gasBefore = gasleft();
-        UniswapV2LiquidityMathLibrary.getLiquidityValueAfterArbitrageToPrice(
+    ) external view returns (uint256) {
+        uint256 gasBefore = gasleft();
+        SethLiquidityMathLibrary.getLiquidityValueAfterArbitrageToPrice(
             factory,
             tokenA,
             tokenB,
@@ -84,7 +74,7 @@ contract ExampleComputeLiquidityValue {
             truePriceTokenB,
             liquidityAmount
         );
-        uint gasAfter = gasleft();
+        uint256 gasAfter = gasleft();
         return gasBefore - gasAfter;
     }
 }
